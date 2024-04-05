@@ -11,17 +11,9 @@ Caching everything is an option, as well, but requires excessive resources.
 The bot is intended to be self-hosted, registered in Discord developer portal by the user, and added to a server.
 **There exists no public instance of the bot.** Use at your own risk.
 
-## Configuration
+The following environment variables can be used to configure the bot:
 
-The following environment variables can be used to configure the bot.
-
-| Variable         | Description                                        |
-|:-----------------|:---------------------------------------------------|
-| `LOG_LEVEL`      | `info`, `debug`, `error`                           |
-| `DISCORD_TOKEN`  | The token used to log in with the bot              |
-| `HISTORY_LENGTH` | Number of messages per channel to cache on startup |
-| `HISTORY_WEEKS`  | Maximum number of weeks to cache on startup        |
-
-## License
-
-This code is released under the [MIT license](http://opensource.org/licenses/MIT).
+* `LOG_LEVEL`: The logging level to use, choices are `info`, `debug` and `error`
+* `DISCORD_TOKEN`: The token used to log in with the bot
+* `HISTORY_LENGTH`: Number of messages per channel to cache on startup
+* `HISTORY_WEEKS`: Maximum number of weeks to cache on startup
