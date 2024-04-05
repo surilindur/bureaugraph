@@ -75,11 +75,12 @@ class App(Client):
             error("Attempting to log a message without guild or update channel")
 
     async def populate_message_cache(self) -> None:
-        after = utcnow() - timedelta(weeks=HISTORY_WEEKS)
-        limit = HISTORY_LENGTH
+        after = (utcnow() - timedelta(weeks=HISTORY_WEEKS)) if HISTORY_WEEKS else None
         messages: List[Message] = []
+        history_length = HISTORY_LENGTH or "unlimited"
+        after_string = after.strftime(DATE_FORMAT) if after else "the beginning"
         info(f"Loading old messages for {len(self.guilds)} servers")
-        info(f"Maximum of {limit} per channel since {after.strftime(DATE_FORMAT)}")
+        info(f"Maximum {history_length}/channel since {after_string}")
         for guild in self.guilds:
             info(f"Caching server {guild.name} <{guild.id}>")
             message_count = 0
@@ -90,7 +91,7 @@ class App(Client):
                 ):
                     try:
                         async for message in channel.history(
-                            limit=limit,
+                            limit=HISTORY_LENGTH,
                             after=after,
                             oldest_first=False,
                         ):

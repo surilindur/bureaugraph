@@ -8,8 +8,9 @@ LOG_LEVELS: Dict[str, int] = {
     "error": ERROR,
 }
 
-HISTORY_LENGTH = int(getenv("HISTORY_LENGTH", "100"))
-HISTORY_WEEKS = int(getenv("HISTORY_WEEKS", "104"))
+HISTORY_MINIMUM = int(getenv("HISTORY_MINIMUM")) if getenv("HISTORY_MINIMUM") else 1000
+HISTORY_LENGTH = int(getenv("HISTORY_LENGTH")) if getenv("HISTORY_LENGTH") else None
+HISTORY_WEEKS = int(getenv("HISTORY_WEEKS")) if getenv("HISTORY_WEEKS") else None
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
