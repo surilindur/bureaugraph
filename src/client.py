@@ -81,9 +81,9 @@ class App(Client):
         info(f"Loading old messages for {len(self.guilds)} servers")
         info(f"Maximum of {limit} per channel since {after.strftime(DATE_FORMAT)}")
         for guild in self.guilds:
-            info(
-                f"Processing {guild.name} <{guild.id}> with {len(guild.channels)} channels"
-            )
+            info(f"Caching server {guild.name} <{guild.id}>")
+            message_count = 0
+            channel_count = 0
             for channel in guild.channels:
                 if channel is not guild.public_updates_channel and isinstance(
                     channel, TextChannel
@@ -94,9 +94,12 @@ class App(Client):
                             after=after,
                             oldest_first=False,
                         ):
+                            message_count += 1
                             messages.append(message)
+                        channel_count += 1
                     except Forbidden:
                         pass
+            info(f"Cached {message_count} messages from {channel_count} channels")
         messages.sort(key=lambda m: m.edited_at or m.created_at)
         messages_length = len(messages)
         info(f"Loaded {messages_length} messages in total")
