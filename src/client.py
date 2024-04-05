@@ -2,6 +2,7 @@ from typing import Sequence, List
 from datetime import timedelta
 from logging import info, error
 from collections import deque
+from discord.abc import GuildChannel
 from discord.file import File
 from discord.client import Client
 from discord.guild import Guild
@@ -147,6 +148,55 @@ class Apparatus(Client):
             content=metadata_content(event="member_update", data=data),
         )
 
+    async def on_guild_channel_create(self, channel: GuildChannel) -> None:
+        data = {
+            "channel": {
+                "category": channel.category.name if channel.category else None,
+                "created": channel.created_at.strftime(DATE_FORMAT),
+                "identity": f"{channel.name} {channel.mention}",
+            }
+        }
+        await self.server_update(
+            guild=channel.guild,
+            content=metadata_content(event="guild_channel_create", data=data),
+        )
+
+    async def on_guild_channel_delete(self, channel: GuildChannel) -> None:
+        data = {
+            "channel": {
+                "category": channel.category.name if channel.category else None,
+                "created": channel.created_at.strftime(DATE_FORMAT),
+                "identity": f"{channel.name} {channel.mention}",
+            }
+        }
+        await self.server_update(
+            guild=channel.guild,
+            content=metadata_content(event="guild_channel_delete", data=data),
+        )
+
+    # async def on_guild_channel_update(
+    #     self,
+    #     before: GuildChannel,
+    #     after: GuildChannel,
+    # ) -> None:
+    #     updates = {}
+    #     if after.name != before.name:
+    #         updates["name"] = f"{before.name} -> {after.name}"
+    #     if after.category_id != before.category_id:
+    #         updates["category"] = f"{before.category.name} -> {after.category.name}"
+    #     data = {
+    #         "channel": {
+    #             "category": before.category.name if before.category else None,
+    #             "created": before.created_at.strftime(DATE_FORMAT),
+    #             "identity": f"{before.name} {before.mention}",
+    #         },
+    #         "updates": updates if len(updates) else "other",
+    #     }
+    #     await self.server_update(
+    #         guild=before.guild,
+    #         content=metadata_content(event="guild_channel_update", data=data),
+    #     )
+
     async def server_update(self, guild: Guild | None, **kwargs) -> None:
         if guild and guild.public_updates_channel:
             await guild.public_updates_channel.send(**kwargs)
@@ -183,6 +233,9 @@ class Apparatus(Client):
             async for member in guild.fetch_members(limit=None):
                 guild._members[member.id] = member
             info(f"Cached {len(guild._members)} members")
+            for channel in await guild.fetch_channels():
+                guild._channels[channel.id] = channel
+            info(f"Cached {len(guild._channels)} channels")
         messages.sort(key=lambda m: m.edited_at or m.created_at)
         messages_length = len(messages)
         info(f"Loaded {messages_length} messages in total")
