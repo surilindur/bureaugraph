@@ -1,0 +1,4 @@
+black
+discord.py
+pycodestyle
+pyyaml
