@@ -12,8 +12,10 @@ from src.config import DATE_FORMAT
 def metadata_content(event: str, data: Dict[str, str | int | float]) -> str:
     data = {
         **data,
-        "event": event,
-        "time": utcnow().strftime(DATE_FORMAT),
+        "event": {
+            "type": event,
+            "time": utcnow().strftime(DATE_FORMAT),
+        },
     }
     content = f"```yaml\n{dump(data=data, allow_unicode=True)}```"
     return content

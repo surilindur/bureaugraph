@@ -9,13 +9,11 @@
 </p>
 
 **Apparatus** is an experimental Discord bot for learning purposes.
-There exists no public instance of the bot due to its experimental nature,
-and interested users are expected to run one themselves.
+There exists no public instance of the bot due to its experimental nature.
 The bot is not optimised to handle large servers, rather,
 it is designed to offer interesting niche features on smaller servers with less traffic.
-Most of the features require the bot to cache a considerable portion of -- if not the entire --
-message history on any server it is added,
-to be able to properly carry out its tasks.
+Most of the features require the bot to cache a considerable portion of - if not the entire -
+message history on any server it is connected with, to be able to properly carry out its tasks.
 
 The following environment variables can be used to configure the bot:
 
@@ -24,3 +22,6 @@ The following environment variables can be used to configure the bot:
 * `HISTORY_MINIMUM` The minimum message cache size
 * `HISTORY_LENGTH` Number of messages per channel to cache on startup
 * `HISTORY_WEEKS` Maximum number of weeks to cache on startup
+
+While the bot is not expected to function properly,
+any issues can still be reported on the GitHub issue tracker.
