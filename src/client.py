@@ -1,7 +1,8 @@
-from typing import Sequence, List
+from typing import Sequence, List, Dict, Any
 from datetime import timedelta
 from logging import info, error
 from collections import deque
+from yaml import dump
 from discord.abc import GuildChannel
 from discord.file import File
 from discord.client import Client
@@ -13,19 +14,13 @@ from discord.errors import Forbidden
 from discord.utils import utcnow
 
 from src.config import DATE_FORMAT, HISTORY_LENGTH, HISTORY_WEEKS
-from src.utils import message_diff, metadata_content
+from src.utils import event_data, diff_file
 
 
 class Apparatus(Client):
     async def on_ready(self) -> None:
         info(f"Logged in as {self.user}")
         await self.populate_internal_caches()
-
-    async def on_message(self, message: Message) -> None:
-        if message.author == self.user:
-            return
-        if message.content.startswith("$hello"):
-            await message.channel.send("Hello!")
 
     async def on_message_delete(self, message: Message) -> None:
         await self.handle_message_delete(message)
@@ -35,91 +30,39 @@ class Apparatus(Client):
             await self.handle_message_delete(message)
 
     async def handle_message_delete(self, message: Message) -> None:
-        data = {
-            "message": {
-                "author": f"{message.author.display_name} {message.author.mention}",
-                "channel": f"{message.channel.name} {message.channel.mention}",
-                "attachments": len(message.attachments),
-                "created": message.created_at.strftime(DATE_FORMAT),
-                "reactions": len(message.reactions),
-                "edited": (
-                    message.edited_at.strftime(DATE_FORMAT)
-                    if message.edited_at
-                    else "never"
-                ),
-            }
-        }
+        data = event_data(event="message_delete", target=message)
         files = [
             *await self.copy_attachments(message=message),
-            message_diff(
-                message_id=message.id,
-                old_content=message.content,
-                new_content="",
-                old_date=message.edited_at or message.created_at,
-                new_date=message.edited_at or message.created_at,
+            diff_file(
+                id=message.id,
+                a=message.content,
+                b="",
+                a_date=message.edited_at or message.created_at,
+                b_date=message.edited_at or message.created_at,
             ),
         ]
-        await self.server_update(
-            guild=message.guild,
-            content=metadata_content(event="message_delete", data=data),
-            files=files,
-        )
+        await self.record_event(guild=message.guild, data=data, files=files)
 
     async def on_message_edit(self, before: Message, after: Message) -> None:
-        data = {
-            "message": {
-                "author": f"{before.author.display_name} {before.author.mention}",
-                "channel": f"{before.channel.name} {before.channel.mention}",
-                "attachments": len(before.attachments),
-                "created": before.created_at.strftime(DATE_FORMAT),
-                "reactions": len(before.reactions),
-                "edited": (
-                    before.edited_at.strftime(DATE_FORMAT)
-                    if before.edited_at
-                    else "never"
-                ),
-            }
-        }
+        data = event_data(event="message_edit", target=before)
         files = [
-            message_diff(
-                message_id=before.id,
-                old_content=before.content if before is not after else "",
-                new_content=after.content,
-                old_date=before.edited_at or before.created_at,
-                new_date=after.edited_at or after.created_at,
+            diff_file(
+                id=before.id,
+                a=before.content,
+                b=after.content,
+                a_date=before.edited_at or before.created_at,
+                b_date=after.edited_at or after.created_at,
             )
         ]
-        await self.server_update(
-            guild=before.guild,
-            content=metadata_content(event="message_edit", data=data),
-            files=files,
-        )
+        await self.record_event(guild=before.guild, data=data, files=files)
 
     async def on_member_join(self, member: Member) -> None:
-        data = {
-            "member": {
-                "identity": f"{member.display_name} {member.mention}",
-                "registered": member.created_at.strftime(DATE_FORMAT),
-                "joined": member.joined_at.strftime(DATE_FORMAT),
-            }
-        }
-        await self.server_update(
-            guild=member.guild,
-            content=metadata_content(event="member_join", data=data),
-        )
+        data = event_data(event="member_join", target=member)
+        await self.record_event(guild=member.guild, data=data)
 
     async def on_member_remove(self, member: Member) -> None:
-        data = {
-            "member": {
-                "identity": f"{member.display_name} {member.mention}",
-                "registered": member.created_at.strftime(DATE_FORMAT),
-                "joined": member.joined_at.strftime(DATE_FORMAT),
-            }
-        }
-        await self.server_update(
-            guild=member.guild,
-            content=metadata_content(event="member_remove", data=data),
-        )
+        data = event_data(event="member_remove", target=member)
+        await self.record_event(guild=member.guild, data=data)
 
     async def on_member_update(self, before: Member, after: Member) -> None:
         updates = {}
@@ -136,43 +79,18 @@ class Apparatus(Client):
                 ",".join(r.name for r in roles_removed) if roles_removed else ""
             )
         data = {
-            "member": {
-                "identity": f"{before.display_name} {before.mention}",
-                "registered": before.created_at.strftime(DATE_FORMAT),
-                "joined": before.joined_at.strftime(DATE_FORMAT),
-            },
+            **event_data(event="member_update", target=before),
             "updates": updates,
         }
-        await self.server_update(
-            guild=before.guild,
-            content=metadata_content(event="member_update", data=data),
-        )
+        await self.record_event(guild=before.guild, data=data)
 
     async def on_guild_channel_create(self, channel: GuildChannel) -> None:
-        data = {
-            "channel": {
-                "category": channel.category.name if channel.category else None,
-                "created": channel.created_at.strftime(DATE_FORMAT),
-                "identity": f"{channel.name} {channel.mention}",
-            }
-        }
-        await self.server_update(
-            guild=channel.guild,
-            content=metadata_content(event="guild_channel_create", data=data),
-        )
+        data = event_data(event="guild_channel_create", target=channel)
+        await self.record_event(guild=channel.guild, data=data)
 
     async def on_guild_channel_delete(self, channel: GuildChannel) -> None:
-        data = {
-            "channel": {
-                "category": channel.category.name if channel.category else None,
-                "created": channel.created_at.strftime(DATE_FORMAT),
-                "identity": f"{channel.name} {channel.mention}",
-            }
-        }
-        await self.server_update(
-            guild=channel.guild,
-            content=metadata_content(event="guild_channel_delete", data=data),
-        )
+        data = event_data(event="guild_channel_delete", target=channel)
+        await self.record_event(guild=channel.guild, data=data)
 
     # async def on_guild_channel_update(
     #     self,
@@ -197,9 +115,17 @@ class Apparatus(Client):
     #         content=metadata_content(event="guild_channel_update", data=data),
     #     )
 
-    async def server_update(self, guild: Guild | None, **kwargs) -> None:
-        if guild and guild.public_updates_channel:
-            await guild.public_updates_channel.send(**kwargs)
+    async def record_event(
+        self,
+        guild: Guild,
+        data: Dict[str, Any],
+        files: Sequence[File] = [],
+    ) -> None:
+        if guild.public_updates_channel:
+            await guild.public_updates_channel.send(
+                content=f"```yaml\n{dump(data=data, allow_unicode=True)}```",
+                files=files,
+            )
         else:
             error("Attempting to log a message without guild or update channel")
 
