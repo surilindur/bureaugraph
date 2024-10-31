@@ -1,24 +1,45 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  - push
+  - pull_request
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  DEFAULT_PYTHON_VERSION: 3.13
+
 jobs:
 
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repisitory
+        uses: actions/checkout@v4
+      - name: Use Python ${{ env.DEFAULT_PYTHON_VERSION }}
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: ${{ env.DEFAULT_PYTHON_VERSION}}
           cache: pip
-      - run: python -m pip install -r requirements.txt
-      - run: python -m pycodestyle --count --max-line-length=90 --exclude .venv ./**/*.py
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Install linter
+        run: python -m pip install pycodestyle
+      - name: Run linter
+        run: python -m pycodestyle --count --max-line-length=90 --exclude .venv ./**/*.py
+
+  docker:
+    name: Docker
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repisitory
+        uses: actions/checkout@v4
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          push: false
+          tags: bureaugraph:dev
