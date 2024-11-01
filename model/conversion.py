@@ -181,6 +181,8 @@ def object_to_graph(value: object) -> IsomorphicGraph:
                 (uri, DISCORD.editedAt, xsd_datetime(value.created_at)),
             )
         )
+        if value.type:
+            triples.append((uri, DISCORD.channelType, Literal(value.type.name)))
         if value.category:
             triples.extend(
                 (

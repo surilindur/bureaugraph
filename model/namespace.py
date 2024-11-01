@@ -56,6 +56,7 @@ class DISCORD(DefinedNamespace):
     content: URIRef  # Message content
     channel: URIRef  # Link from server to a channel
     createdAt: URIRef  # Creation time as xsd:dateTime
+    channelType: URIRef  # The channel type
     emoji: URIRef  # Unicode emoji that represents a sticker
     editedAt: URIRef  # Modification time as xsd:dateTime
     contentType: URIRef  # Content mimetype
