@@ -17,7 +17,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repisitory
+      - name: Checkout repository
         uses: actions/checkout@v4
       - name: Use Python ${{ env.DEFAULT_PYTHON_VERSION }}
         uses: actions/setup-python@v5
@@ -36,7 +36,7 @@ jobs:
     needs: lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repisitory
+      - name: Checkout repository
         uses: actions/checkout@v4
       - name: Build image
         uses: docker/build-push-action@v6
