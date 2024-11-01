@@ -19,6 +19,9 @@ DISCORDPERMISSIONS = Namespace(f"{_DISCORD_URI}/permissions/")
 # Utility namespace for Discord channels
 DISCORDCHANNELS = Namespace(f"{_DISCORD_URI}/channels/")
 
+# Utility namespace for Discord stickets
+DISCORDSTICKERS = Namespace(f"{_DISCORD_URI}/stickers/")
+
 
 class DISCORD(DefinedNamespace):
     """
@@ -38,6 +41,7 @@ class DISCORD(DefinedNamespace):
     Guild: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#guild
     Emoji: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#discord.Emoji
     Attachment: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#attachment
+    GuildSticker: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#discord.GuildSticker
     Snowflake: URIRef
 
     description: URIRef  # Description of an attachment or a text channel
@@ -52,6 +56,7 @@ class DISCORD(DefinedNamespace):
     content: URIRef  # Message content
     channel: URIRef  # Link from server to a channel
     createdAt: URIRef  # Creation time as xsd:dateTime
+    emoji: URIRef  # Unicode emoji that represents a sticker
     editedAt: URIRef  # Modification time as xsd:dateTime
     contentType: URIRef  # Content mimetype
     widthPixels: URIRef  # Width as xsd:integer

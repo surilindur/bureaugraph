@@ -24,6 +24,7 @@ from discord.emoji import Emoji
 from discord.utils import utcnow
 from discord.guild import Guild
 from discord.member import Member
+from discord.sticker import GuildSticker
 from discord.activity import CustomActivity
 from discord.message import Message
 from discord.channel import TextChannel
@@ -693,16 +694,15 @@ class CustomClient(Client):
         after: Iterable[Emoji],
     ) -> None:
         graph = get_guild_graph(guild)
-        # Assuming the URI remains the same
-        before_map = {object_to_uri(e): e for e in before}
-        after_map = {object_to_uri(e): e for e in after}
-        for uri, emoji in before_map.items():
+        before_map = {object_to_uri(e): object_to_graph(e) for e in before}
+        after_map = {object_to_uri(e): object_to_graph(e) for e in after}
+        for uri, cbd in before_map.items():
             if uri in after_map:
-                new_cbd = object_to_graph(after_map[uri])
+                new_cbd = after_map[uri]
                 del after_map[uri]
             else:
                 new_cbd = Graph()
-            if object_to_graph(emoji) == new_cbd:
+            if cbd == new_cbd:
                 debug(f"Skip update without edits for <{uri}>")
             else:
                 await self.synchronise_cbd(
@@ -712,11 +712,47 @@ class CustomClient(Client):
                     graph=graph,
                     guild=guild,
                 )
-        for uri, emoji in after_map.items():
+        for uri, cbd in after_map.items():
             await self.synchronise_cbd(
                 uri=uri,
                 old_cbd=Graph(),
-                new_cbd=object_to_graph(emoji),
+                new_cbd=cbd,
+                graph=graph,
+                guild=guild,
+            )
+
+    # Sticker handling
+
+    async def on_guild_stickers_update(
+        self,
+        guild: Guild,
+        before: Iterable[GuildSticker],
+        after: Iterable[GuildSticker],
+    ) -> None:
+        graph = get_guild_graph(guild)
+        before_map = {object_to_uri(s): object_to_graph(s) for s in before}
+        after_map = {object_to_uri(s): object_to_graph(s) for s in after}
+        for uri, cbd in before_map.items():
+            if uri in after_map:
+                new_cbd = after_map[uri]
+                del after_map[uri]
+            else:
+                new_cbd = Graph()
+            if cbd == new_cbd:
+                debug(f"Skip update without edits for <{uri}>")
+            else:
+                await self.synchronise_cbd(
+                    uri=uri,
+                    old_cbd=graph.cbd(uri),
+                    new_cbd=new_cbd,
+                    graph=graph,
+                    guild=guild,
+                )
+        for uri, cbd in after_map.items():
+            await self.synchronise_cbd(
+                uri=uri,
+                old_cbd=Graph(),
+                new_cbd=cbd,
                 graph=graph,
                 guild=guild,
             )

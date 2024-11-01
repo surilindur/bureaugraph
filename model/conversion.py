@@ -14,6 +14,7 @@ from discord.emoji import Emoji
 from discord.member import Member
 from discord.message import Message
 from discord.message import Attachment
+from discord.sticker import GuildSticker
 from discord.channel import TextChannel
 from discord.channel import VoiceChannel
 from discord.channel import ForumChannel
@@ -34,6 +35,7 @@ from model.namespace import DISCORD
 from model.namespace import DISCORDGUILD
 from model.namespace import DISCORDROLE
 from model.namespace import DISCORDUSER
+from model.namespace import DISCORDSTICKERS
 from model.namespace import DISCORDPERMISSIONS
 
 
@@ -50,6 +52,8 @@ def object_to_uri(value: object) -> URIRef:
         return DISCORDUSER[str(value.id)]
     elif isinstance(value, Role):
         return DISCORDROLE[str(value.id)]
+    elif isinstance(value, GuildSticker):
+        return DISCORDSTICKERS[str(value.id)]
     elif isinstance(value, (Attachment, Emoji)):
         return URIRef(simplify_uri(value.url))
     elif isinstance(value, (Message, GuildChannel)):
@@ -103,6 +107,18 @@ def object_to_graph(value: object) -> IsomorphicGraph:
         )
         for role in value.roles:
             triples.append((uri, DISCORD.role, object_to_uri(role)))
+    if isinstance(value, GuildSticker):
+        triples.extend(
+            (
+                (uri, RDF.type, DISCORD.GuildSticker),
+                (uri, DISCORD.name, Literal(value.name)),
+                (uri, DISCORD.emoji, Literal(value.emoji)),
+                (uri, DISCORD.createdAt, xsd_datetime(value.created_at)),
+                (uri, DISCORD.editedAt, xsd_datetime(value.created_at)),
+                (uri, DISCORD.description, Literal(value.description)),
+                (uri, DISCORD.contentType, Literal(f"image/{value.format.name}")),
+            )
+        )
     if isinstance(value, (Member, User)):
         triples.extend(
             (
