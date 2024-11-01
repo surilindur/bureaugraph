@@ -18,6 +18,7 @@ from discord.ext.tasks import loop
 from discord.file import File
 from discord.role import Role
 from discord.emoji import Emoji
+from discord.errors import Forbidden
 from discord.utils import utcnow
 from discord.guild import Guild
 from discord.member import Member
@@ -74,7 +75,7 @@ class CustomClient(Client):
             info(f"Logged in as <{object_to_uri(self.user)}>")
             await self.update_status()
             info(f"Synchronising {len(self.guilds)} guild graphs with Discord state")
-            # await self.clear_graph()
+            await self.clear_graph()
             for guild in self.guilds:
                 if guild.public_updates_channel:
                     await self.synchronise_guild(guild)
@@ -158,15 +159,22 @@ class CustomClient(Client):
         for sticker in guild.stickers:
             await synchronise_entity(sticker)
         for channel in guild.channels:
+            channel_uri = object_to_uri(channel)
             if channel.id == guild.public_updates_channel.id:
-                warning(f"Skipping <{object_to_uri(channel)}> as update channel")
+                warning(f"Skipping <{channel_uri}> as update channel")
             else:
                 await synchronise_entity(channel)
                 if isinstance(channel, (TextChannel, ForumChannel)):
-                    async for message in channel.history(limit=None, oldest_first=True):
-                        await synchronise_entity(message)
-                        for attachment in message.attachments:
-                            await synchronise_entity(attachment)
+                    try:
+                        async for message in channel.history(
+                            limit=None,
+                            oldest_first=True,
+                        ):
+                            await synchronise_entity(message)
+                            for attachment in message.attachments:
+                                await synchronise_entity(attachment)
+                    except Forbidden:
+                        warning(f"Skipping <{channel_uri}> as inaccessible")
 
         # The subjects that could not be found on Discord, but that were in the graph,
         # have been deleted entirely, and should be reported as such.
