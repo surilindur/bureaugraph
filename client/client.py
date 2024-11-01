@@ -727,6 +727,8 @@ class CustomClient(Client):
                 graph=graph,
                 guild=guild,
             )
+        graph.commit()
+        graph.close()
 
     # Sticker handling
 
@@ -763,6 +765,8 @@ class CustomClient(Client):
                 graph=graph,
                 guild=guild,
             )
+        graph.commit()
+        graph.close()
 
     # Status message things
 
