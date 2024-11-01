@@ -185,6 +185,10 @@ class CustomClient(Client):
             await synchronise_entity(role)
         for member in guild.members:
             await synchronise_entity(member)
+        for emoji in guild.emojis:
+            await synchronise_entity(emoji)
+        for sticker in guild.stickers:
+            await synchronise_entity(sticker)
         for channel in guild.channels:
             if channel.id == guild.public_updates_channel.id:
                 warning(f"Skipping <{object_to_uri(channel)}> as update channel")
