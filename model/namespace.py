@@ -30,49 +30,51 @@ class DISCORD(DefinedNamespace):
     This is a quick mapping of some discord.py objects and their attributes
     into virtual RDF classes and objects, that are not actually defined in the
     namespace URI that is being used.
+
+    https://discordpy.readthedocs.io/en/stable/api.html
     """
 
     _NS = Namespace(f"{_DISCORD_URI}/vocabulary/")
 
-    Message: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#message
-    Role: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#role
-    User: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#user
-    Channel: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#guildchannel
-    Guild: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#guild
-    Emoji: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#discord.Emoji
-    Attachment: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#attachment
-    GuildSticker: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#discord.GuildSticker
+    Message: URIRef
+    Role: URIRef
+    User: URIRef
+    Channel: URIRef
+    Guild: URIRef
+    Emoji: URIRef
+    Attachment: URIRef
+    GuildSticker: URIRef
     Snowflake: URIRef
 
-    description: URIRef  # Description of an attachment or a text channel
-    name: URIRef  # Name of a user, channel, attachment, role, etc.
-    displayName: URIRef  # The display name of a user, that is shown in the member lists
-    displayAvatar: URIRef  # User avatar URI
-    bot: URIRef  # Whether the user is a bot
-    system: URIRef  # Whether the user is a system user
-    permission: URIRef  # Permission name as xsd:string
-    sizeBytes: URIRef  # Size of something in bytes
-    author: URIRef  # The author of a message
-    content: URIRef  # Message content
-    channel: URIRef  # Link from server to a channel
-    createdAt: URIRef  # Creation time as xsd:dateTime
-    channelType: URIRef  # The channel type
-    emoji: URIRef  # Unicode emoji that represents a sticker
-    editedAt: URIRef  # Modification time as xsd:dateTime
-    contentType: URIRef  # Content mimetype
-    widthPixels: URIRef  # Width as xsd:integer
-    heightPixels: URIRef  # Height as xsd:integer
-    attachment: URIRef  # Link from message to attachment
-    managed: URIRef  # Whether the emoji is managed externally
-    animated: URIRef  # Whether the emoji is animated
-    member: URIRef  # Link from server to a user
-    nsfw: URIRef  # Channel NSFW flag as xsd:boolean
-    role: URIRef  # Link from user to a role
-    icon: URIRef  # Server icon URI
-    userLimit: URIRef  # Voice channel user limit as xsd:integer
-    bitRate: URIRef  # Voice channel bitrate
-    rtcRegion: URIRef  # Voice channel WebRTC region
-    videoQualityMode: URIRef  # Voice channel video quality mode
+    description: URIRef  # Textual description of a channel, attachment, etc.
+    name: URIRef  # Name of guild, user, channel, attachment, emoji, etc.
+    displayName: URIRef  # The name of a user that is displayed in a guild
+    displayAvatar: URIRef  # The URI of a user's avatar in a guild
+    bot: URIRef  # Boolean indicating whether the user is a bot
+    system: URIRef  # Boolean indicating whether the user is a system user
+    permission: URIRef  # The URI of a permission associated with a role
+    sizeBytes: URIRef  # The size of something in bytes
+    author: URIRef  # The URI of the author of a message
+    content: URIRef  # The message content as a string
+    channel: URIRef  # The URI of the channel of a message
+    createdAt: URIRef  # Creation time of something as xsd:dateTime
+    editedAt: URIRef  # Modification time of something as xsd:dateTime
+    channelType: URIRef  # The type of a channel, represented as a string
+    emoji: URIRef  # The unicode emoji that represents a sticker
+    contentType: URIRef  # The mimetype of attachment or sticker
+    widthPixels: URIRef  # Image width as xsd:integer
+    heightPixels: URIRef  # Image height as xsd:integer
+    attachment: URIRef  # The URI of an attachment associated with a message
+    managed: URIRef  # Boolean indicating whether an emoji is managed externally
+    animated: URIRef  # Boolean indicating whether an emoji is animated
+    member: URIRef  # The URI of a member associated with a server
+    nsfw: URIRef  # Boolean whether the channel is flagged as NSFW
+    role: URIRef  # The URI of a role associated with a user
+    icon: URIRef  # The URI of the server icon
+    userLimit: URIRef  # The voice channel user limit as xsd:integer
+    bitRate: URIRef  # The voice channel bitrate
+    rtcRegion: URIRef  # The voice channel WebRTC region, represented as a string
+    videoQualityMode: URIRef  # The voice channel video quality mode as a string
     permissionsSynced: URIRef  # Whether the permissions are synced with the category
-    colour: URIRef  # Colour representation as hex xsd:string
-    category: URIRef  # The category of a guild channel
+    colour: URIRef  # Colour representation as hexadecimal
+    category: URIRef  # The URI of the category of a guild channel

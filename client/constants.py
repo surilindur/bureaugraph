@@ -36,18 +36,24 @@ STATUS_STARTUP = "Geþyld byþ middes eades."
 STATUS_POOL: Sequence[str] = (
     # When you criticise another, remember no one is faultless.
     "Đonne ðu oþerne mon tæle, ðonne geðenc ðu þæt nan mon ne bið leahterleas.",
-    # Don't argue with a stubborn person, or one who talks too much; many have the power of speech; very few of wisdom.
-    "Ne flit ðu wið anwilne monn, ne wið oferspræcne; manegum menn is forgifen ðæt he spræcan mæg, swiðe feawum þæt he seo gesceadwis.",
-    # Give more thanks for what you have than for what you're promised... Where little is promised, there's little deception.
-    "Wite ðæs maran þanc ðæs ðe ðu hæbbe ðonne ðæs þe ðe monn gehate... ðær lytel gehaten bið, þær bið lytel alogen.",
+    # Don't argue with a stubborn person, or one who talks too much;
+    # many have the power of speech; very few of wisdom.
+    "Ne flit ðu wið anwilne monn, ne wið oferspræcne; manegum menn is forgifen ðæt "
+    "he spræcan mæg, swiðe feawum þæt he seo gesceadwis.",
+    # Give more thanks for what you have than for what you're promised...
+    # Where little is promised, there's little deception.
+    "Wite ðæs maran þanc ðæs ðe ðu hæbbe ðonne ðæs þe ðe monn gehate... "
+    "ðær lytel gehaten bið, þær bið lytel alogen.",
     # Speak more often about other people’s good deeds than about your own.
     "Sprec ofter embe oðres monnes weldæde þonne emb ðine agna.",
     # Do not hope for another man's death; it is unknown who will live longest.
     "Ne hopa ðu to oþres monnes deaðe; uncuð hwa lengest libbe.",
     # Though a poor friend may give you little, take it with great thanks.
     "Đeah þe earm friond lytel sylle, nim hit to miccles þances.",
-    # If you have children, teach them a skill, so they can live by it... A skill is better than possessions.
-    "Gif ðu bearn hæbbe, lær þa cræftes, þæt hie mægen be þon libban... Cræft bið bætera þonne æht.",
+    # If you have children, teach them a skill, so they can live by it...
+    # A skill is better than possessions.
+    "Gif ðu bearn hæbbe, lær þa cræftes, þæt hie mægen be þon libban... "
+    "Cræft bið bætera þonne æht.",
     # Forbear often where you might easily take vengeance.
     "Forbær oft ðæt þu eaðe wrecan mæge.",
     # Help both friends and strangers wherever you can.
@@ -72,7 +78,8 @@ STATUS_POOL: Sequence[str] = (
     "Forseoh ðisse worlde wlenca gif ðu wille beon welig on ðinum modo.",
     # If you want to have a good reputation, don't rejoice in any evil.
     "Gif ðu wille godne hlisan habban, ne fægna ðu nanes yfeles.",
-    # Always be learning something; though your good fortune may abandon you, don't abandon your skill.
+    # Always be learning something; though your good fortune may abandon you,
+    # don't abandon your skill.
     "Leorna a hwæthwugu; ðeah ðe þine gesælða forlætan, ne forlætt þe no þin cræft.",
     # Don't speak too much, but listen attentively to everyone's words.
     "Ne beo þu to oferspræce, ac hlyst ælces monnes worda swiðe georne.",

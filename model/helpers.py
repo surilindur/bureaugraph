@@ -6,7 +6,7 @@ from rdflib.namespace import XSD
 
 
 def xsd_datetime(value: datetime) -> Literal:
-    """Convert a Python datetime object into string literal with datatype xsd:dateTime"""
+    """Convert a Python datetime object into literal with datatype xsd:dateTime"""
     return Literal(
         lexical_or_value=value.isoformat(timespec="seconds"),
         datatype=XSD.dateTime,
@@ -14,7 +14,7 @@ def xsd_datetime(value: datetime) -> Literal:
 
 
 def xsd_integer(value: int) -> Literal:
-    """Convert a Python integer value into string literal with datatype xsd:integer"""
+    """Convert a Python integer value into literal with datatype xsd:integer"""
     return Literal(
         lexical_or_value=str(value),
         datatype=XSD.integer,

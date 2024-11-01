@@ -241,7 +241,9 @@ class CustomClient(Client):
         # Making them isomorphic for comparison use
         old_cbd = to_isomorphic(old_cbd)
         new_cbd = to_isomorphic(new_cbd)
-        # During the initial sync, the edited_at dates for Discord data are set to creation date
+        # The data acquired from Discord does not necessarily have the latest
+        # modification date attached to it, if Discord does not save such data.
+        # In these cases, the latest date needs to be fetched from the stored data.
         if old_cbd and new_cbd:
             set_edited_at(
                 new_cbd,
