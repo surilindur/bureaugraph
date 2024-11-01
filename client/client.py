@@ -1,16 +1,16 @@
+from io import BytesIO
 from enum import StrEnum
+from json import dumps
 from typing import Any
 from typing import Dict
 from typing import Iterable
-from signal import SIGINT
-from signal import SIGTERM
-from signal import signal
 from random import choice
 from logging import info
 from logging import debug
 from logging import error
 from logging import warning
 from logging import exception
+from traceback import format_exc
 
 from yaml import dump
 
@@ -37,14 +37,14 @@ from rdflib.graph import Graph
 from rdflib.compare import to_isomorphic
 from rdflib.query import Result
 
+from client.config import get_admin_user_id
 from client.storage import get_store
 from client.storage import get_guild_graph
 from client.constants import STATUS_STARTUP
 from client.constants import STATUS_POOL
 from client.reporting import get_diff
 from client.reporting import get_patches_from_graphs
-
-# from client.commands import create_command_tree
+from client.commands import create_command_tree
 
 from model.namespace import DISCORD
 from model.namespace import DISCORDCHANNELS
@@ -69,34 +69,58 @@ class CustomClient(Client):
     def __init__(self, intents: Intents) -> None:
         super().__init__(intents=intents)
         # The command tree holds all the slash command stuff
-        # self.tree = create_command_tree(client=self)
-        # Handle SIGINT and SIGTERM, specifically in Docker
-        signal(SIGINT, self.close)
-        signal(SIGTERM, self.close)
+        self.tree = create_command_tree(client=self)
 
     async def on_ready(self) -> None:
         try:
             info(f"Logged in as <{object_to_uri(self.user)}>")
             await self.update_status()
-            start_time = utcnow()
-            info("Synchronising graphs with Discord state")
+            info(f"Synchronising {len(self.guilds)} guild graphs with Discord state")
             # await self.clear_graph()
             for guild in self.guilds:
                 if guild.public_updates_channel:
-                    info(f'Synchronising guild "{guild.name}"')
                     await self.synchronise_guild(guild)
+                    # Clear all the commands, and then sync the empty command tree
                     # self.tree.clear_commands(guild=guild)
-                    # await self.tree.sync(guild=guild)
+                    self.tree.copy_global_to(guild=guild)
+                    await self.tree.sync(guild=guild)
                 else:
                     error(f"No updates channel in <{object_to_uri(guild)}>")
-            time_taken = round((utcnow() - start_time).total_seconds(), 1)
-            info(f"Synchronisation done in {time_taken} seconds")
+            info("Synchronisation flow complete")
             self.initialisation_done = True
             self.refresh_status.start()
         except Exception as ex:
             exception(ex)
             info("Terminating self")
             await self.close()
+
+    async def on_error(self, event_method: str, *args: Any, **kwargs: Any) -> None:
+        await super().on_error(event_method, *args, **kwargs)
+        try:
+            admin_uid = get_admin_user_id()
+            user = self.get_user(admin_uid)
+            if user:
+                info(f"Sending error message to <{object_to_uri(user)}>")
+                stacktrace_file = File(
+                    fp=BytesIO(format_exc().encode()),
+                    filename="stacktrace.log",
+                )
+                error_metadata = dumps(
+                    {
+                        "event_method": event_method,
+                        "args": tuple(repr(a) for a in args),
+                        "kwargs": dict({k: repr(v) for k, v in kwargs.items()}),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    indent=2,
+                )
+                await user.send(
+                    content=f"```json\n{error_metadata}\n```",
+                    file=stacktrace_file,
+                )
+        except Exception as ex:
+            exception(ex)
 
     async def clear_graph(self, uri: URIRef | None = None) -> None:
         """
@@ -120,12 +144,18 @@ class CustomClient(Client):
         This will go through the contents of the entire guild,
         and might be extremely slow for large servers.
         """
+        start_time = utcnow()
+
         store_graph = get_guild_graph(guild)
-        info(f"Remote graph <{store_graph.identifier}> has {len(store_graph)} triples")
 
         # Create a local working graph to speed up the process
         store_graph_copy = Graph()
         store_graph_copy += store_graph
+
+        # Check if the current sync is the first one for a given guild
+        previous_size = len(store_graph_copy)
+
+        info(f"Syncing <{store_graph.identifier}> (previously {previous_size} triples)")
 
         # Working copy of the graph, that will be updated to reflect the changes
         local_graph = Graph()
@@ -144,6 +174,8 @@ class CustomClient(Client):
                 new_cbd=object_to_graph(entity),
                 guild=guild,
                 graph=local_graph,
+                # Avoid spamming updates on initial guild sync pass
+                verbose=previous_size > 0,
             )
 
         await synchronise_entity(guild)
@@ -178,9 +210,9 @@ class CustomClient(Client):
         removals = store_graph_copy - local_graph
         additions = local_graph - store_graph_copy
 
-        info(f"Updating store graph (-{len(removals)}, +{len(additions)})")
         if removals:
             store_graph -= removals
+
         if additions:
             store_graph += additions
 
@@ -189,9 +221,7 @@ class CustomClient(Client):
         store_size = len(store_graph)
         assert (
             local_size == store_size
-        ), f"Store graph has {store_size} and local graph has {local_size} triples"
-
-        info(f"Resulting store graph has {store_size} triples")
+        ), f"Graph size mismatch: store {store_size}, local {local_size}"
 
         # Commit the changes
         store_graph.commit()
@@ -201,6 +231,17 @@ class CustomClient(Client):
         local_graph.close()
         store_graph_copy.close()
 
+        # Report the current guild graph as synced
+        info(
+            "Synced <{}> (-{}, +{}, ={}) in {:.1f} seconds".format(
+                store_graph.identifier,
+                len(removals),
+                len(additions),
+                store_size,
+                (utcnow() - start_time).total_seconds(),
+            )
+        )
+
     async def synchronise_cbd(
         self,
         uri: URIRef,
@@ -208,6 +249,7 @@ class CustomClient(Client):
         new_cbd: Graph,
         graph: Graph,
         guild: Guild,
+        verbose: bool = True,
     ) -> None:
         """
         Evaluate the given entity, to determine whether it has been modified,
@@ -254,7 +296,7 @@ class CustomClient(Client):
             # Ensure the edited-at attribute is always up-to-date
             set_edited_at(graph, uri, utcnow())
         types = get_type_names(old_cbd + new_cbd)
-        if (event in (EventType.REMOVED, EventType.UPDATED)) or "user" in types:
+        if verbose and "message" not in types and "attachment" not in types:
             await self.send_update(
                 guild=guild,
                 event=event,

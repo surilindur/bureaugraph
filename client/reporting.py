@@ -1,6 +1,5 @@
 from io import BytesIO
 from typing import Iterable
-from pathlib import Path
 from difflib import unified_diff
 from datetime import datetime
 
@@ -14,17 +13,12 @@ from rdflib.namespace import RDF
 from model.helpers import iso_datetime
 from model.namespace import DISCORD
 from model.conversion import get_edited_at
+from model.conversion import graph_to_turtle
 
 
 def count_subjects(graph: Graph) -> int:
     """Count the number of unique subjects in a graph."""
     return sum(1 for _ in graph.subjects(unique=True))
-
-
-def bind_namespaces(graph: Graph) -> Graph:
-    """Bind the custom namespaces to a graph."""
-    graph.bind("discord", DISCORD)
-    return graph
 
 
 def get_diff(
@@ -58,9 +52,9 @@ def get_patches_from_graphs(
     old_date = get_edited_at(old, uri) if old else None
     new_date = get_edited_at(new, uri) if new else utcnow()
     graph_diff_bytes = get_diff(
-        old=bind_namespaces(old).serialize(format="turtle"),
+        old=graph_to_turtle(old),
         old_date=old_date,
-        new=bind_namespaces(new).serialize(format="turtle"),
+        new=graph_to_turtle(new),
         new_date=new_date,
         bytes=True,
     )
@@ -85,13 +79,3 @@ def get_patches_from_graphs(
             )
             files.append(File(fp=content_diff_bytes, filename="content.patch"))
     return files
-
-
-def serialize_to_file(graph: Graph, path: Path | str) -> None:
-    """Serialize a graph to file as turtle."""
-    with open(path, "wb") as graph_file:
-        bind_namespaces(graph).serialize(
-            destination=graph_file,
-            format="turtle",
-            encoding="utf-8",
-        )

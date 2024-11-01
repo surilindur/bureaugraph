@@ -214,3 +214,13 @@ def get_type_names(graph: Graph) -> Iterable[str]:
     for uri in type_uris:
         type_names.append(uri.removeprefix(DISCORD._NS).lower())
     return type_names
+
+
+def graph_to_turtle(graph: Graph) -> str:
+    """
+    Converts the specified graph to Turtle format,
+    taking care of the prefix bindings.
+    """
+    graph.bind("discord", DISCORD)
+    turtle = graph.serialize(format="turtle")
+    return turtle

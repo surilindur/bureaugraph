@@ -25,6 +25,7 @@ The bot can be configured using a set of environment variables:
 * `SPARQL_ENDPOINT_QUERY`: The SPARQL query endpoint URI.
 * `SPARQL_ENDPOINT_UPDATE`: The SPARQL update endpoint URI.
 * `SPARQL_USERNAME`, `SPARQL_PASSWORD`: The credentials used to authenticate to the SPARQL endpoint.
+* `ADMIN_UID`: The Discord user ID who is the administrator of the bot.
 * `LOG_LEVEL` The logging level to use, choices are `info`, `debug`, `warning` and `error`
 
 ## Issues
