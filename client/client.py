@@ -295,7 +295,9 @@ class CustomClient(Client):
             graph += additions
         if event is EventType.UPDATED:
             # Ensure the edited-at attribute is always up-to-date
-            set_edited_at(graph, uri, utcnow())
+            edit_time = utcnow()
+            set_edited_at(graph, uri, edit_time)
+            set_edited_at(new_cbd, uri, edit_time)
         types = get_type_names(old_cbd + new_cbd)
         if verbose and "message" not in types and "attachment" not in types:
             await self.send_update(
