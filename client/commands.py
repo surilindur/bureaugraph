@@ -55,15 +55,6 @@ def create_command_tree(client: Client) -> CommandTree:
             content=f"```yaml\n{str(error)}\n```",
             ephemeral=True,
         )
-        await client.on_error(
-            "app_command",
-            error=str(error),
-            user_integration=interaction.is_user_integration(),
-            guild_integration=interaction.is_guild_integration(),
-            created_at=interaction.created_at.isoformat(timespec="seconds"),
-            user_name=interaction.user.name,
-            user_id=interaction.user.id,
-        )
 
     tree.error(on_error)
     return tree

@@ -27,9 +27,3 @@ def get_sparl_query_endpoint() -> str:
 def get_sparql_update_endpoint() -> str:
     """Get the SPARQL update endpoint URI."""
     return getenv("SPARQL_ENDPOINT_UPDATE")
-
-
-def get_admin_user_id() -> int | None:
-    """Get the Discord user ID of the bot administrator."""
-    admin_uid = getenv("ADMIN_UID")
-    return int(admin_uid) if admin_uid else None

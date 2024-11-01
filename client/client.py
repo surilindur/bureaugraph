@@ -1,6 +1,4 @@
-from io import BytesIO
 from enum import StrEnum
-from json import dumps
 from typing import Any
 from typing import Dict
 from typing import Iterable
@@ -10,7 +8,6 @@ from logging import debug
 from logging import error
 from logging import warning
 from logging import exception
-from traceback import format_exc
 
 from yaml import dump
 
@@ -39,7 +36,6 @@ from rdflib.graph import Graph
 from rdflib.compare import to_isomorphic
 from rdflib.query import Result
 
-from client.config import get_admin_user_id
 from client.storage import get_store
 from client.storage import get_guild_graph
 from client.constants import STATUS_STARTUP
@@ -95,34 +91,6 @@ class CustomClient(Client):
             exception(ex)
             info("Terminating self")
             await self.close()
-
-    async def on_error(self, event_method: str, *args: Any, **kwargs: Any) -> None:
-        await super().on_error(event_method, *args, **kwargs)
-        try:
-            admin_uid = get_admin_user_id()
-            user = self.get_user(admin_uid)
-            if user:
-                info(f"Sending error message to <{object_to_uri(user)}>")
-                stacktrace_file = File(
-                    fp=BytesIO(format_exc().encode()),
-                    filename="stacktrace.log",
-                )
-                error_metadata = dumps(
-                    {
-                        "event_method": event_method,
-                        "args": tuple(repr(a) for a in args),
-                        "kwargs": dict({k: repr(v) for k, v in kwargs.items()}),
-                    },
-                    ensure_ascii=False,
-                    sort_keys=True,
-                    indent=2,
-                )
-                await user.send(
-                    content=f"```json\n{error_metadata}\n```",
-                    file=stacktrace_file,
-                )
-        except Exception as ex:
-            exception(ex)
 
     async def clear_graph(self, uri: URIRef | None = None) -> None:
         """
