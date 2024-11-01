@@ -20,6 +20,7 @@ from discord.client import Client
 from discord.ext.tasks import loop
 from discord.file import File
 from discord.role import Role
+from discord.emoji import Emoji
 from discord.utils import utcnow
 from discord.guild import Guild
 from discord.member import Member
@@ -680,6 +681,43 @@ class CustomClient(Client):
         )
         graph.commit()
         graph.close()
+
+    # Emoji handling
+
+    async def on_guild_emojis_update(
+        self,
+        guild: Guild,
+        before: Iterable[Emoji],
+        after: Iterable[Emoji],
+    ) -> None:
+        graph = get_guild_graph(guild)
+        # Assuming the URI remains the same
+        before_map = {object_to_uri(e): e for e in before}
+        after_map = {object_to_uri(e): e for e in after}
+        for uri, emoji in before_map.items():
+            if uri in after_map:
+                new_cbd = object_to_graph(after_map[uri])
+                del after_map[uri]
+            else:
+                new_cbd = Graph()
+            if object_to_graph(emoji) == new_cbd:
+                debug(f"Skip update without edits for <{uri}>")
+            else:
+                await self.synchronise_cbd(
+                    uri=uri,
+                    old_cbd=graph.cbd(uri),
+                    new_cbd=new_cbd,
+                    graph=graph,
+                    guild=guild,
+                )
+        for uri, emoji in after_map.items():
+            await self.synchronise_cbd(
+                uri=uri,
+                old_cbd=Graph(),
+                new_cbd=object_to_graph(emoji),
+                graph=graph,
+                guild=guild,
+            )
 
     # Status message things
 

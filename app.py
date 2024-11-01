@@ -9,6 +9,7 @@ intents.guild_messages = True
 intents.guilds = True
 intents.message_content = True
 intents.members = True
+intents.emojis_and_stickers = True
 
 client = CustomClient(intents=intents)
 

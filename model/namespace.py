@@ -36,6 +36,7 @@ class DISCORD(DefinedNamespace):
     User: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#user
     Channel: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#guildchannel
     Guild: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#guild
+    Emoji: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#discord.Emoji
     Attachment: URIRef  # https://discordpy.readthedocs.io/en/stable/api.html#attachment
     Snowflake: URIRef
 
@@ -56,6 +57,8 @@ class DISCORD(DefinedNamespace):
     widthPixels: URIRef  # Width as xsd:integer
     heightPixels: URIRef  # Height as xsd:integer
     attachment: URIRef  # Link from message to attachment
+    managed: URIRef  # Whether the emoji is managed externally
+    animated: URIRef  # Whether the emoji is animated
     member: URIRef  # Link from server to a user
     nsfw: URIRef  # Channel NSFW flag as xsd:boolean
     role: URIRef  # Link from user to a role

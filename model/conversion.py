@@ -10,6 +10,7 @@ from discord.role import Role
 from discord.user import User
 from discord.user import ClientUser
 from discord.guild import Guild
+from discord.emoji import Emoji
 from discord.member import Member
 from discord.message import Message
 from discord.message import Attachment
@@ -49,7 +50,7 @@ def object_to_uri(value: object) -> URIRef:
         return DISCORDUSER[str(value.id)]
     elif isinstance(value, Role):
         return DISCORDROLE[str(value.id)]
-    elif isinstance(value, Attachment):
+    elif isinstance(value, (Attachment, Emoji)):
         return URIRef(simplify_uri(value.url))
     elif isinstance(value, (Message, GuildChannel)):
         return URIRef(simplify_uri(value.jump_url))
@@ -89,6 +90,19 @@ def object_to_graph(value: object) -> IsomorphicGraph:
                 ),
             )
         )
+    if isinstance(value, Emoji):
+        triples.extend(
+            (
+                (uri, RDF.type, DISCORD.Emoji),
+                (uri, DISCORD.name, Literal(value.name)),
+                (uri, DISCORD.createdAt, xsd_datetime(value.created_at)),
+                (uri, DISCORD.editedAt, xsd_datetime(value.created_at)),
+                (uri, DISCORD.managed, xsd_boolean(value.managed)),
+                (uri, DISCORD.animated, xsd_boolean(value.animated)),
+            )
+        )
+        for role in value.roles:
+            triples.append((uri, DISCORD.role, object_to_uri(role)))
     if isinstance(value, (Member, User)):
         triples.extend(
             (
