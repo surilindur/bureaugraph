@@ -300,7 +300,10 @@ class CustomClient(Client):
             set_edited_at(graph, uri, edit_time)
             set_edited_at(new_cbd, uri, edit_time)
         types = get_type_names(old_cbd + new_cbd)
-        if verbose and "message" not in types and "attachment" not in types:
+        if verbose and (
+            ("message" not in types and "attachment" not in types)
+            or event in (EventType.UPDATED, EventType.REMOVED)
+        ):
             await self.send_update(
                 guild=guild,
                 event=event,
