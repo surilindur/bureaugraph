@@ -1,13 +1,10 @@
 from typing import Dict
 
-from discord.guild import Guild
-
+from rdflib.term import URIRef
 from rdflib.graph import Graph
 from rdflib.graph import Dataset
 from rdflib.store import Store
 from rdflib.plugins.stores.sparqlstore import SPARQLUpdateStore
-
-from model.conversion import object_to_uri
 
 from client.constants import USER_AGENT
 from client.config import get_sparl_query_endpoint
@@ -45,7 +42,5 @@ def get_dataset() -> Dataset:
     return _cached_data["dataset"]
 
 
-def get_guild_graph(guild: Guild) -> Graph:
-    guild_uri = object_to_uri(guild)
-    guild_graph = get_dataset().graph(identifier=guild_uri)
-    return guild_graph
+def get_graph(uri: URIRef) -> Graph:
+    return get_dataset().graph(identifier=uri)

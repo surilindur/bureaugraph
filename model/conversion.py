@@ -1,9 +1,5 @@
 from typing import List
-from typing import Tuple
 from typing import Iterable
-from datetime import datetime
-from urllib.parse import urljoin
-from urllib.parse import urlparse
 
 from discord.abc import GuildChannel
 from discord.role import Role
@@ -29,6 +25,7 @@ from model.helpers import xsd_boolean
 from model.helpers import xsd_datetime
 from model.helpers import xsd_integer
 from model.helpers import hex_rgb
+from model.helpers import simplify_uri
 from model.helpers import python_datetime_snowflake
 
 from model.namespace import DISCORD
@@ -39,12 +36,7 @@ from model.namespace import DISCORDSTICKERS
 from model.namespace import DISCORDPERMISSIONS
 
 
-def simplify_uri(uri: str) -> str:
-    """Removes query strings and other appendices from a URI."""
-    return urljoin(uri, urlparse(uri).path)
-
-
-def object_to_uri(value: object) -> URIRef:
+def object_uri(value: object) -> URIRef:
     """Resolves the URI of an object, if possible."""
     if isinstance(value, Guild):
         return DISCORDGUILD[str(value.id)]
@@ -61,9 +53,9 @@ def object_to_uri(value: object) -> URIRef:
     raise TypeError(f"Unable to determine URI for {value}")
 
 
-def object_to_graph(value: object) -> IsomorphicGraph:
-    """Extracts triples from an object, based on the type."""
-    uri = object_to_uri(value)
+def object_cbd(value: object) -> IsomorphicGraph:
+    """Creates the Concise Bounded Description for a supported Python object."""
+    uri = object_uri(value)
     triples = [(uri, RDF.type, DISCORD.Snowflake)]
     if isinstance(value, Guild):
         triples.extend(
@@ -106,7 +98,7 @@ def object_to_graph(value: object) -> IsomorphicGraph:
             )
         )
         for role in value.roles:
-            triples.append((uri, DISCORD.role, object_to_uri(role)))
+            triples.append((uri, DISCORD.role, object_uri(role)))
     if isinstance(value, GuildSticker):
         triples.extend(
             (
@@ -125,7 +117,11 @@ def object_to_graph(value: object) -> IsomorphicGraph:
                 (uri, RDF.type, DISCORD.User),
                 (uri, DISCORD.name, Literal(value.name)),
                 (uri, DISCORD.displayName, Literal(value.display_name)),
-                (uri, DISCORD.displayAvatar, URIRef(value.display_avatar.url)),
+                (
+                    uri,
+                    DISCORD.displayAvatar,
+                    URIRef(simplify_uri(value.display_avatar.url)),
+                ),
                 (uri, DISCORD.createdAt, xsd_datetime(value.created_at)),
                 (uri, DISCORD.editedAt, xsd_datetime(value.created_at)),
                 (uri, DISCORD.bot, xsd_boolean(value.bot)),
@@ -133,7 +129,7 @@ def object_to_graph(value: object) -> IsomorphicGraph:
             )
         )
     if isinstance(value, Member):
-        triples.extend((uri, DISCORD.role, object_to_uri(role)) for role in value.roles)
+        triples.extend((uri, DISCORD.role, object_uri(role)) for role in value.roles)
     if isinstance(value, Attachment):
         creation_date = python_datetime_snowflake(value.id)
         triples.extend(
@@ -158,16 +154,16 @@ def object_to_graph(value: object) -> IsomorphicGraph:
             (
                 (uri, RDF.type, DISCORD.Message),
                 (uri, DISCORD.content, Literal(value.clean_content)),
-                (uri, DISCORD.author, object_to_uri(value.author)),
+                (uri, DISCORD.author, object_uri(value.author)),
                 (uri, DISCORD.createdAt, xsd_datetime(value.created_at)),
                 (
                     uri,
                     DISCORD.editedAt,
                     xsd_datetime(value.edited_at or value.created_at),
                 ),
-                (uri, DISCORD.channel, object_to_uri(value.channel)),
+                (uri, DISCORD.channel, object_uri(value.channel)),
                 *(
-                    (uri, DISCORD.attachment, object_to_uri(attachment))
+                    (uri, DISCORD.attachment, object_uri(attachment))
                     for attachment in value.attachments
                 ),
             )
@@ -186,7 +182,7 @@ def object_to_graph(value: object) -> IsomorphicGraph:
         if value.category:
             triples.extend(
                 (
-                    (uri, DISCORD.category, object_to_uri(value.category)),
+                    (uri, DISCORD.category, object_uri(value.category)),
                     (
                         uri,
                         DISCORD.permissionsSynced,
@@ -217,24 +213,6 @@ def object_to_graph(value: object) -> IsomorphicGraph:
         graph.add(triple)
     assert len(graph) > 1, f"Unable to convert {value} into graph"
     return graph
-
-
-def get_edited_at(graph: Graph, uri: URIRef) -> datetime:
-    """Gets the modification date of the item."""
-    edited_at: Tuple[Literal] = tuple(
-        graph.objects(subject=uri, predicate=DISCORD.editedAt)
-    )
-    edited_count = len(edited_at)
-    assert edited_count == 1, f"Found {edited_count} edit dates for <{uri}>"
-    edited_date: datetime = edited_at[0].toPython()
-    assert edited_date.tzinfo, f"Timezone-unaware edit date on <{uri}>"
-    return edited_date
-
-
-def set_edited_at(graph: Graph, uri: URIRef, timestamp: datetime) -> None:
-    """Sets the modification date of item to the specified datetime."""
-    assert timestamp.tzinfo, "Modification time is timezone-unaware"
-    graph.set((uri, DISCORD.editedAt, xsd_datetime(timestamp)))
 
 
 def get_type_names(graph: Graph) -> Iterable[str]:

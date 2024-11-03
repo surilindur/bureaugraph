@@ -6,19 +6,13 @@ from datetime import datetime
 from discord.utils import utcnow
 from discord.file import File
 
-from rdflib.term import URIRef
 from rdflib.graph import Graph
-from rdflib.namespace import RDF
+
+from client.utilities import latest_edited_at
 
 from model.helpers import iso_datetime
 from model.namespace import DISCORD
-from model.conversion import get_edited_at
 from model.conversion import graph_to_turtle
-
-
-def count_subjects(graph: Graph) -> int:
-    """Count the number of unique subjects in a graph."""
-    return sum(1 for _ in graph.subjects(unique=True))
 
 
 def get_diff(
@@ -26,56 +20,86 @@ def get_diff(
     old_date: datetime | None,
     new: str,
     new_date: datetime,
-    bytes: bool = False,
-) -> str | BytesIO:
+) -> str:
     """Generates a unified diff from two strings."""
-    diff_lines = unified_diff(
-        a=old.splitlines(),
-        b=new.splitlines(),
-        fromfiledate=iso_datetime(old_date) if old_date else "",
-        tofiledate=iso_datetime(new_date),
-        lineterm="",
+    return "\n".join(
+        unified_diff(
+            a=old.splitlines(),
+            b=new.splitlines(),
+            fromfiledate=iso_datetime(old_date) if old_date else "",
+            tofiledate=iso_datetime(new_date),
+            lineterm="",
+        )
     )
-    diff_string = "\n".join(diff_lines)
-    return BytesIO(initial_bytes=diff_string.encode()) if bytes else diff_string
 
 
-def get_patches_from_graphs(
-    uri: URIRef,
-    old: Graph,
-    new: Graph,
-) -> Iterable[File]:
-    """
-    Generates a patch file from two sets of triples.
-    This patch file can be included in a Discord message as attachment.
-    """
-    old_date = get_edited_at(old, uri) if old else None
-    new_date = get_edited_at(new, uri) if new else utcnow()
-    graph_diff_bytes = get_diff(
+def get_diff_bytes(
+    old: str,
+    old_date: datetime | None,
+    new: str,
+    new_date: datetime,
+) -> BytesIO:
+    """Generates a unified diff from two strings as BytesIO."""
+    return BytesIO(get_diff(old, old_date, new, new_date).encode())
+
+
+def get_patch(old: Graph, new: Graph, filename: str) -> File:
+    """Generates a Discord File object with the patch between two graphs."""
+    diff_bytesio = get_diff_bytes(
         old=graph_to_turtle(old),
-        old_date=old_date,
+        old_date=latest_edited_at(old),
         new=graph_to_turtle(new),
-        new_date=new_date,
-        bytes=True,
+        new_date=latest_edited_at(new) or utcnow(),
     )
-    files = [File(fp=graph_diff_bytes, filename="graph.patch")]
-    if (uri, RDF.type, DISCORD.Message) in old:
-        old_content = tuple(old.objects(subject=uri, predicate=DISCORD.content))
-        new_content = tuple(new.objects(subject=uri, predicate=DISCORD.content))
-        assert (
-            len(old_content) < 2 and len(new_content) < 2
-        ), f"Too many content declarations for <{uri}>"
-        old_content_string = old_content[0] if old_content else ""
-        new_content_string = new_content[0] if new_content else ""
-        if (
-            old_content_string or new_content_string
-        ) and old_content_string != new_content_string:
-            content_diff_bytes = get_diff(
-                old=old_content_string,
-                old_date=old_date,
-                new=new_content_string,
+    return File(fp=diff_bytesio, filename=filename)
+
+
+def get_patches_for_notification(old: Graph, new: Graph) -> Iterable[File]:
+    """Generates all patches to be attached to an update notification."""
+    files = [get_patch(old, new, "graph.patch")]
+    utc_now = utcnow()
+    old_content = {
+        uri: content
+        for uri, content in old.subject_objects(
+            predicate=DISCORD.content,
+            unique=True,
+        )
+    }
+    old_cbds = {uri: old.cbd(uri) for uri in old_content.keys()}
+    new_content = {
+        uri: content
+        for uri, content in new.subject_objects(
+            predicate=DISCORD.content,
+            unique=True,
+        )
+    }
+    new_cbds = {uri: new.cbd(uri) for uri in new_content.keys()}
+    for uri, content in old_content.items():
+        if uri in new_content:
+            new = new_content[uri]
+            new_date = latest_edited_at(new_cbds[uri]) or utc_now
+            del new_content[uri]
+            del new_cbds[uri]
+        else:
+            new = ""
+            new_date = utc_now
+        if content != new:
+            diff_bytesio = get_diff_bytes(
+                old=content,
+                old_date=latest_edited_at(old_cbds[uri]),
+                new=new,
                 new_date=new_date,
-                bytes=True,
             )
-            files.append(File(fp=content_diff_bytes, filename="content.patch"))
+            file = File(fp=diff_bytesio, filename="content.patch")
+            files.append(file)
+    for uri, content in new_content.items():
+        if content != "":
+            diff_bytesio = get_diff_bytes(
+                old="",
+                old_date=None,
+                new=content,
+                new_date=latest_edited_at(new_cbds[uri]) or utc_now,
+            )
+            file = File(fp=diff_bytesio, filename="content.patch")
+            files.append(file)
     return files

@@ -1,5 +1,5 @@
 from io import BytesIO
-from logging import error
+from logging import exception
 
 from rdflib.graph import Graph
 
@@ -14,9 +14,9 @@ from discord.app_commands import AppCommandContext
 from discord.app_commands import AppInstallationType
 from discord.app_commands import command
 
-from client.storage import get_guild_graph
+from client.storage import get_graph
 
-from model.conversion import object_to_uri
+from model.conversion import object_uri
 from model.conversion import graph_to_turtle
 
 
@@ -24,18 +24,22 @@ from model.conversion import graph_to_turtle
 async def describe(interaction: Interaction, entity: Role | Member) -> None:
     """Collect the Concise Bounded Description of the given entity, if available."""
     try:
-        graph = get_guild_graph(interaction.guild)
-        uri = object_to_uri(entity)
-        cbd = graph.cbd(uri)
+        graph = get_graph(object_uri(interaction.guild))
+        cbd = graph.cbd(object_uri(entity))
     except Exception as ex:
-        error(ex)
+        exception(ex)
         cbd = Graph()
-    turtle_io = BytesIO(graph_to_turtle(cbd).encode())
-    file = File(fp=turtle_io, filename="cbd.txt")
-    await interaction.response.send_message(file=file)
+    turtle = graph_to_turtle(cbd)
+    content = f"```yaml\n{turtle}```"
+    if len(content) > 2000:
+        turtle_io = BytesIO(turtle.encode())
+        file = File(fp=turtle_io, filename="cbd.yaml")
+        await interaction.response.send_message(file=file)
+    else:
+        await interaction.response.send_message(content=content)
 
 
-def create_command_tree(client: Client) -> CommandTree:
+async def create_command_tree(client: Client) -> CommandTree:
     tree = CommandTree(
         client=client,
         allowed_contexts=AppCommandContext(
@@ -57,4 +61,7 @@ def create_command_tree(client: Client) -> CommandTree:
         )
 
     tree.error(on_error)
+    for guild in client.guilds:
+        tree.copy_global_to(guild=guild)
+        await tree.sync(guild=guild)
     return tree
