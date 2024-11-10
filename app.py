@@ -1,22 +1,27 @@
-from discord import Intents
+from os import scandir
+from logging import debug
+from importlib import import_module
 
-from client.config import get_discord_token
-from client.config import get_log_level
-from client.client import CustomClient
+from client.bot import bot
+from client.config import DISCORD_TOKEN
 
-intents = Intents.none()
-intents.guild_messages = True
-intents.guilds = True
-intents.message_content = True
-intents.members = True
-intents.emojis_and_stickers = True
+MODULE_EXTENSION = ".py"
 
-client = CustomClient(intents=intents)
+
+def load_modules(package: str) -> None:
+    for fp in scandir(package):
+        if fp.name.endswith(MODULE_EXTENSION):
+            name = fp.name.removesuffix(MODULE_EXTENSION)
+            load_target = f"{package}.{name}"
+            debug(f"Loading module {load_target}")
+            import_module(load_target)
+
+
+def main() -> None:
+    for package in ("events", "commands"):
+        load_modules(package)
+    bot.run(token=DISCORD_TOKEN)
+
 
 if __name__ == "__main__":
-    client.run(
-        reconnect=True,
-        token=get_discord_token(),
-        log_level=get_log_level(),
-        root_logger=True,
-    )
+    main()

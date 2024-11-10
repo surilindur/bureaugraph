@@ -1,7 +1,3 @@
-# basic dependencies
-discord.py
-RDFLib
+py-cord[speed]
 PyYAML
-
-# required for discord.py and no longer included in Python 3.13
-audioop-lts; python_version>='3.13'
+RDFLib

@@ -1,12 +1,12 @@
-# Bureaugraph
+# Quill
 
 <p align="left">
-  <a href="https://github.com/surilindur/bureaugraph/actions/workflows/ci.yml"><img alt="Workflow: CI" src=https://github.com/surilindur/bureaugraph/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/surilindur/quill/actions/workflows/ci.yml"><img alt="Workflow: CI" src=https://github.com/surilindur/quill/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
   <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-Bureaugraph is an experimental Discord bot for learning purposes, and is not designed to handle large servers.
+Quill is an experimental Discord bot for learning purposes, and is not designed to handle large servers.
 The purpose of the bot is to provide interesting insights for administrators of smaller servers.
 
 > [!CAUTION]
